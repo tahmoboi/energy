@@ -1,71 +1,249 @@
 ---
-title: "energy"
+title: "Carbon vs Clean"
 author: "Tahmid Hossain Bhuiyan"
 date: "2026-02-10"
 output: html_document
 ---
+## Race that determines the Survival of Humanity
 
-## Renewable Energy Dataset
-``` {r}
+**You either die a hero or live long enough to see yourself become the villain**
+*-Harvey Dent, The Dark Knight*
+
+Carbon has been a massive catalyst to the world's progress i.e **A HERO**. However, now the survival of humanity depends on whether carbon wins or loses the battle against clean energy, i.e it's **A VILLAIN** now!
+
+The way humanity produces energy today will shape whether future generations inherit a livable planet. For over a century, fossil fuels powered economic growth and technological progress, but they also drove a sharp rise in global carbon emissions. As climate risks intensify, the global energy system is entering a decisive transition period.
+
+This data story frames that transition as a race between carbon-intensive fossil fuels and rapidly expanding renewable energy. Using six major economies as case studies, we examine emissions trends, renewable electricity growth, and shifting energy costs. Together, these visualizations explore which system is gaining ground and what that means for sustainable development in the 21st century.
+
+## Jump to Sections
+
+- [Chapter 1 — The Carbon Age Built the Modern World](#ch1)
+- [Chapter 2 — The Carbon Consequence](#ch2)
+- [Chapter 3 — The Rise of Clean Energy](#ch3)
+- [Chapter 4 — The Economic Shift](#ch4)
+- [Chapter 5 — So, Who’s Winning Today?](#ch5)
+- [Takewaways](#takeaways)
+- [Data Sources](#datasources)
+
+## Chapter 1 — The Carbon Age Built the Modern World {#ch1}
+**(Data: Co₂ emissions over time+ GDP per Capita over Time)**
+
+For most of modern history, fossil fuels have powered global development. Coal fueled early industry, oil transformed transportation, and natural gas expanded electricity access. As economies industrialized, energy demand surged, and fossil fuels became the backbone of manufacturing, trade, and urban growth. Rising emissions over time reflect just how closely economic expansion and carbon output were tied.
+
+```{r, echo=FALSE,message=FALSE, warning=FALSE}
+library(dplyr)
 library(readr)
-energy <- read_csv('../../data/IRENA data.csv', skip=1)
-```
-
-## Gapminder Datase
-``` {r}
+library(plotly)
 library(gapminder)
-library(dplyr)
-
-data(gapminder)
-gapminder %>% head
-```
-
-## Carbon emission dataset
-```{r}
-library(dplyr)
-library(readr)
-
-
 url <- 'https://nyc3.digitaloceanspaces.com/owid-public/data/co2/owid-co2-data.csv'
-
 carbon <-
   read_csv(url)
-carbon %>% head
+
+countries <- c(
+  "China",
+  "United States",
+  "India",
+  "Russia",
+  "Japan",
+  "Germany")
+
+carbi <- carbon %>% filter(country %in% countries)
+g1 <- ggplot(carbi,
+       aes(x=year,
+           y= co2,
+           color=country))+
+  labs(title= "CO2 Emissions over Time",
+       y="CO2(tons)",
+       x="Year")+
+  geom_path()+
+  theme_minimal()
+
+ggplotly(g1)
+###############################################################################
+
+garbi <- gapminder %>% filter(country %in% countries)
+
+g2 <- ggplot(garbi,
+             aes(x=year,
+                 y=gdpPercap,
+                 color=country))+
+  labs(title="GDP per Capita Growth Across Major Economies",
+       x="Year",
+       Y="Gdp per Capita(USD)")+
+  geom_path()+
+  theme_minimal()
+
+ggplotly(g2)
 ```
 
-## Levelized Cost of Energy
+Looking at global CO₂ emissions trend and GDP per Capita trend, we can clearly see that as CO2 emission rises, gdp per capita also steadily increases. Emissions rise sharply alongside industrialization and economic prosperity, especially after the mid-20th century. What the graph shows is not just pollution, but progress powered by carbon. The modern world was quite literally built on fossil fuel energy.
 
-```{r}
+
+## Chapter 2 — The Carbon Consequence {#ch2}
+**(Data: GDP and CO2 index trend)**
+
+Economic growth and carbon emissions have historically gone hand in hand. As countries industrialized, fossil fuels powered factories, transportation, and urban expansion, helping raise GDP per capita and living standards. When plotting income against emissions we can clearly see a correlation between a growing GDP per capita and a growing CO2 per capita.
+
+```{r, fig.cap = "Global CO₂ emissions have risen sharply since the mid-20th century, reflecting the fossil-fuel foundation of industrialization and modern economic growth.", echo=FALSE,message=FALSE, warning=FALSE}
+library(dplyr)
+library(readr)
+library(gapminder)
+library(plotly)
+library(tidyr)
+url <- 'https://nyc3.digitaloceanspaces.com/owid-public/data/co2/owid-co2-data.csv'
+carbon <-
+  read_csv(url)
+
+countries <- c(
+  "China",
+  "United States",
+  "India",
+  "Russia",
+  "Japan",
+  "Germany")
+
+carbi2 <- carbon %>% 
+  filter(country %in% countries) %>% 
+  mutate(gdp_per_capita=gdp/population) %>%
+  drop_na(gdp_per_capita, co2_per_capita) %>% 
+  mutate(gdp_index=gdp_per_capita/first(gdp_per_capita) * 100,
+         co2_index=co2_per_capita/first(co2_per_capita)*100) %>% 
+  select(country,year,gdp_index,co2_index) %>% 
+  pivot_longer(cols=c(gdp_index,co2_index),
+               names_to="Metric",
+               values_to="Amount")
+  
+ggplot(carbi2,
+       aes(x=year,
+           y=Amount,
+           color=Metric))+
+  geom_line()+
+  labs(title='Indexed Growth of GDP per Capita and CO2 Emissions',
+x= 'Year',
+y='Index Value (Base Year = 100)')+
+  theme_minimal()
+```
+
+This graph clearly shows how as GDP is increasing, Co2 is also going up. However, there is a dip on Co2 index after 2002 which might indicate that slowly the world is realizing the consequences of CO2 emission and are moving towards other means such as renewable energy.
+
+## Chapter 3 — The Rise of Clean Energy {#ch3}
+**(Data: Renewable energy growth)**
+
+Over the past two decades, renewable energy has moved from the margins to the mainstream. Solar panels, wind turbines, and other clean technologies are being deployed at a scale that would have been hard to imagine just a generation ago. Government policy, climate commitments, and private investment have all helped accelerate this shift.
+
+```{r, echo=FALSE,message=FALSE, warning=FALSE}
+library(readr)
+library(dplyr)
+energy <- read_csv('../../data/IRENA data.csv', skip=1)
+
+countries <- c(
+  "China",
+  "United States of America (the)",
+  "India",
+  "Russian Federation (the)",
+  "Japan",
+  "Germany")
+
+re_energy <- energy %>% 
+  rename(Electricity_statistics=`Electricity statistics`, country="Country/area") %>% 
+  filter(country %in% countries) %>% 
+  mutate(Electricity_statistics=as.numeric(Electricity_statistics)) %>% 
+  filter(Technology =='Total renewable',Electricity_statistics>0)
+
+ggplot(re_energy,
+            aes(x=Year,
+                y=Electricity_statistics,
+                color=`country`))+
+  geom_path()+
+  labs(title='Growth of Renewable Electricity Generation',
+       x='Year',
+       y='Electricity Generation from Renewables (GWh)')+
+  theme_minimal()
+```
+
+As the graph shows, renewable energy usage is growing over time for electricity generation. While fossil fuels still dominate total energy supply, renewables are no longer niche alternatives. They are becoming central to how countries plan their energy futures.
+
+## Chapter 4 — The Economic Shift {#ch4}
+**(Data: Levelized cost of renewable energy)**
+
+One of the biggest reasons renewable energy is scaling so quickly comes down to cost. Historically, fossil fuels maintained their dominance because they were cheaper and more reliable. Early renewable projects often required subsidies to compete in energy markets.
+
+```{r, echo=FALSE,message=FALSE, warning=FALSE}
+library(ggplot2)
 library(readr)
 library(dplyr)
 url <- 'https://raw.githubusercontent.com/ericmkeen/sewanee_esus/master/02_energy_sector/levelized-cost-of-energy.csv'
 econ <- read_csv(url)
-econ %>% head
-```
 
-```{r}
-library(ggplot2)
-ggplot(econ,
+econi <- econ %>% filter(country %in% countries)
+ggplot(econi,
        aes(x=year,
            y=cost,
            color=source))+
   geom_point()+
   geom_hline(yintercept=0.05)+
-  geom_hline(yintercept=0.18,lty=3)+
+  geom_hline(yintercept=0.18)+
   annotate(geom='text',
            x=1990,y=0.1,
            size=3,
            label='Range of fossil fuel 
-           costs')
+           costs')+
+  labs(title='Declining Cost of Renewable Energy Technologies',
+       x='Year',
+       y='Levelized Cost of Energy (USD per kWh)')
 ```
 
+That dynamic has changed dramatically. Data on levelized cost of energy shows steep price declines for solar and wind over time. In many regions, renewables are now as cheap as or cheaper than coal and natural gas. This economic shift is a major turning point, making clean energy adoption not just environmentally responsible but financially logical.
 
-```{r}
+
+
+## Chapter 5 — So, Who’s Winning Today? {#ch5}
+
+Even with rapid renewable growth, fossil fuels still dominate the global energy mix. Carbon emissions remain high, showing that the world continues to rely heavily on coal, oil, and gas. Rising energy demand, especially in developing economies, keeps fossil fuels deeply embedded in the system.
+```{r, echo=FALSE,message=FALSE, warning=FALSE}
+library(readr)
+library(dplyr)
 library(knitr)
-econ %>% filter(year==2020) %>% 
-  group_by(source) %>% 
-  summarize(cost= mean(cost,na.rm=TRUE)) %>% 
-  kable
+energy <- read_csv('../../data/IRENA data.csv', skip=1)
+
+energi <- energy %>% 
+  filter(`Country/area` %in% c(
+    "China",
+    "United States of America (the)",
+    "India",
+    "Russian Federation (the)",
+    "Japan",
+    "Germany")) %>% 
+  rename(Electricity_stats = `Electricity statistics`,
+    Country = `Country/area`) %>% 
+  drop_na(Electricity_stats) %>% 
+  filter(Electricity_stats>0) %>% 
+  mutate(Electricity_stats=as.numeric(Electricity_stats)) %>% 
+  group_by(Country,Technology) %>% 
+  summarise(Electricity_stats=mean(Electricity_stats)) %>% 
+  filter(Technology %in% c('Total renewable', 'Total non-renewable')) %>% 
+  pivot_wider(names_from=Technology,
+               values_from=Electricity_stats)%>% 
+  mutate(Renewable_Percentage=(`Total renewable`/(`Total non-renewable`+`Total renewable`)*100))
+
+energi %>% kable(caption='Average Electricity Generation by Energy Source')
 ```
 
+So the race between carbon and clean energy is still ongoing. Renewables are scaling fast and costs are falling, but the transition is not happening evenly or quickly enough yet. How this balance shifts in the coming decades will shape the future of sustainable development worldwide. 
 
+# Takeaways {#takeaways}
+
+- Fossil fuels powered modern economic growth.
+- Rising GDP historically came with rising emissions.
+- Renewable energy is scaling rapidly worldwide.
+- Falling costs are accelerating the transition.
+- However, fossil fuels still dominate today’s energy mix.
+
+# Data Sources {#datasources}
+1. [Global Carbon Project](https://nyc3.digitaloceanspaces.com/owid-public/data/co2/owid-co2-data.csv) — Provides global carbon emissions data used to track historical emission trends.
+
+2. [IRENA](https://www.dropbox.com/scl/fi/ehhgxkgzkzorco8jw6ohl/IRENA-data.csv?rlkey=i7b2t6q0d3vn3xd1hla41no5j&dl=0) — International Renewable Energy Agency, offering data on renewable electricity generation and capacity.
+
+3. [Our World in Data](https://raw.githubusercontent.com/ericmkeen/sewanee_esus/master/02_energy_sector/levelized-cost-of-energy.csv) — Supplies levelized cost of energy datasets comparing renewable and fossil fuel economics.
+
+4. Gapminder(Library in R) — Provides socioeconomic indicators such as GDP per capita for global development analysis.
