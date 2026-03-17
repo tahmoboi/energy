@@ -22,6 +22,7 @@ This data story frames that transition as a race between carbon-intensive fossil
 - [Chapter 3 — The Rise of Clean Energy](#ch3)
 - [Chapter 4 — The Economic Shift](#ch4)
 - [Chapter 5 — So, Who’s Winning Today?](#ch5)
+- [How does this relate to SDGs?](#SDGs)
 - [Takewaways](#takeaways)
 - [Data Sources](#datasources)
 
@@ -35,9 +36,14 @@ library(dplyr)
 library(readr)
 library(plotly)
 library(gapminder)
+
+#Importing global co2 dataset from OWID
+
 url <- 'https://nyc3.digitaloceanspaces.com/owid-public/data/co2/owid-co2-data.csv'
 carbon <-
   read_csv(url)
+
+#Specifying countries to use for better and cleaner understanding
 
 countries <- c(
   "China",
@@ -47,32 +53,52 @@ countries <- c(
   "Japan",
   "Germany")
 
+#  Cleaning the dataset and making it usable
+
 carbi <- carbon %>% filter(country %in% countries)
+
+# Creating time-series plot of total CO₂ emissions
+# This visualizes how emissions evolved alongside industrial expansion
+
 g1 <- ggplot(carbi,
-       aes(x=year,
-           y= co2,
-           color=country))+
-  labs(title= "CO2 Emissions over Time",
-       y="CO2(tons)",
-       x="Year")+
-  geom_path()+
+       aes(x = year,
+           y = co2,
+           color = country)) +
+  geom_line(size = 0.7, alpha = 0.9) +
+  labs(
+    title = "Modern Economic Growth Was Fueled by Carbon",
+    subtitle = "CO₂ emissions across six major economies over time",
+    x = "Year",
+    y = "CO₂ Emissions (million tonnes)",
+    color = "Country") +
   theme_minimal()
 
+#This makes the graph interactive
 ggplotly(g1)
 ###############################################################################
 
+# Filtering Gapminder dataset for the same countries
+
 garbi <- gapminder %>% filter(country %in% countries)
 
+# Plot GDP per capita over time
+# GDP per capita is used as a proxy for economic prosperity
+
 g2 <- ggplot(garbi,
-             aes(x=year,
-                 y=gdpPercap,
-                 color=country))+
-  labs(title="GDP per Capita Growth Across Major Economies",
-       x="Year",
-       Y="Gdp per Capita(USD)")+
-  geom_path()+
+       aes(x = year,
+           y = gdpPercap,
+           color = country)) +
+  geom_line(size = 0.7, alpha = 0.9) +
+  labs(
+    title = "Rising Prosperity Closely Tracks Energy Use",
+    subtitle = "GDP per capita growth across major economies",
+    x = "Year",
+    y = "GDP per Capita (USD)",
+    color = "Country"
+  ) +
   theme_minimal()
 
+#Making it interactive
 ggplotly(g2)
 ```
 
@@ -84,7 +110,7 @@ Looking at global CO₂ emissions trend and GDP per Capita trend, we can clearly
 
 Economic growth and carbon emissions have historically gone hand in hand. As countries industrialized, fossil fuels powered factories, transportation, and urban expansion, helping raise GDP per capita and living standards. When plotting income against emissions we can clearly see a correlation between a growing GDP per capita and a growing CO2 per capita.
 
-```{r, fig.cap = "Global CO₂ emissions have risen sharply since the mid-20th century, reflecting the fossil-fuel foundation of industrialization and modern economic growth.", echo=FALSE,message=FALSE, warning=FALSE}
+```{r, fig.width=12, fig.cap = "Global CO₂ emissions have risen sharply since the mid-20th century, reflecting the fossil-fuel foundation of industrialization and modern economic growth.", echo=FALSE,message=FALSE, warning=FALSE}
 library(dplyr)
 library(readr)
 library(gapminder)
@@ -102,29 +128,50 @@ countries <- c(
   "Japan",
   "Germany")
 
+# Filter for selected countries
 carbi2 <- carbon %>% 
-  filter(country %in% countries) %>% 
-  mutate(gdp_per_capita=gdp/population) %>%
-  drop_na(gdp_per_capita, co2_per_capita) %>% 
-  mutate(gdp_index=gdp_per_capita/first(gdp_per_capita) * 100,
-         co2_index=co2_per_capita/first(co2_per_capita)*100) %>% 
-  select(country,year,gdp_index,co2_index) %>% 
-  pivot_longer(cols=c(gdp_index,co2_index),
-               names_to="Metric",
-               values_to="Amount")
+  filter(country %in% countries,
+         year>1900) %>%
   
+  group_by(country) %>% 
+  
+# Compute GDP per capita manually
+# This ensures consistency with the CO₂ dataset rather than mixing sources
+  mutate(gdp_per_capita = gdp / population) %>%
+  
+# Remove rows with missing values to avoid distortions in index calculation
+  drop_na(gdp_per_capita, co2_per_capita) %>%
+  
+# Create index values (Base Year = 100)
+# Indexing allows comparison of growth rates rather than raw magnitudes
+  mutate(
+  base_gdp = gdp_per_capita[year == 1990][1],
+  base_co2 = co2_per_capita[year == 1990][1],
+  gdp_index = gdp_per_capita / base_gdp * 100,
+  co2_index = co2_per_capita / base_co2 * 100) %>% 
+  
+# Keep only relevant columns
+  select(country, year, gdp_index, co2_index) %>%
+  
+# Reshape data into long format for easier plotting
+  pivot_longer(cols = c(gdp_index, co2_index),
+               names_to = "Metric",
+               values_to = "Amount")
+
+# Plot indexed growth comparison
 ggplot(carbi2,
-       aes(x=year,
-           y=Amount,
-           color=Metric))+
-  geom_line()+
-  labs(title='Indexed Growth of GDP per Capita and CO2 Emissions',
-x= 'Year',
-y='Index Value (Base Year = 100)')+
+       aes(x = year,
+           y = Amount,
+           color = Metric)) +
+  geom_line() +
+  facet_wrap(~country)+
+  labs(title = "Indexed Growth of GDP per Capita and CO2 Emissions",
+       x = "Year",
+       y = "Index Value (Base Year = 100)") +
   theme_minimal()
 ```
 
-This graph clearly shows how as GDP is increasing, Co2 is also going up. However, there is a dip on Co2 index after 2002 which might indicate that slowly the world is realizing the consequences of CO2 emission and are moving towards other means such as renewable energy.
+This graph clearly shows how as GDP is increasing, Co2 is also going up.
 
 ## Chapter 3 — The Rise of Clean Energy {#ch3}
 **(Data: Renewable energy growth)**
@@ -134,30 +181,37 @@ Over the past two decades, renewable energy has moved from the margins to the ma
 ```{r, echo=FALSE,message=FALSE, warning=FALSE}
 library(readr)
 library(dplyr)
-energy <- read_csv('../../data/IRENA data.csv', skip=1)
+# Import IRENA renewable electricity dataset
+# Skip first row due to formatting structure
+energy <- read_csv('../../data/IRENA data.csv', skip = 1)
 
-countries <- c(
-  "China",
-  "United States of America (the)",
-  "India",
-  "Russian Federation (the)",
-  "Japan",
-  "Germany")
+# Clean and standardize country naming
+re_energy <- energy %>%
+  rename(
+    Electricity_statistics = `Electricity statistics`,
+    country = "Country/area"
+  ) %>%
+  filter(country %in% countries) %>%
+  
+  # Convert electricity values to numeric
+  mutate(Electricity_statistics = as.numeric(Electricity_statistics)) %>%
+  
+  # Focus only on total renewable electricity generation
+  filter(Technology == 'Total renewable',
+         Electricity_statistics > 0)
 
-re_energy <- energy %>% 
-  rename(Electricity_statistics=`Electricity statistics`, country="Country/area") %>% 
-  filter(country %in% countries) %>% 
-  mutate(Electricity_statistics=as.numeric(Electricity_statistics)) %>% 
-  filter(Technology =='Total renewable',Electricity_statistics>0)
-
+# Plot renewable electricity growth over time
 ggplot(re_energy,
-            aes(x=Year,
-                y=Electricity_statistics,
-                color=`country`))+
-  geom_path()+
-  labs(title='Growth of Renewable Electricity Generation',
-       x='Year',
-       y='Electricity Generation from Renewables (GWh)')+
+       aes(x = Year,
+           y = Electricity_statistics,
+           color = country)) +
+  geom_line(size = 0.7, alpha = 0.9) +
+  labs(
+    title = "Renewable Energy Is Scaling Rapidly Across Major Economies",
+    subtitle = "Electricity generation from renewable sources",
+    x = "Year",
+    y = "Renewable Electricity Generation (GWh)",
+    color = "Country") +
   theme_minimal()
 ```
 
@@ -172,25 +226,35 @@ One of the biggest reasons renewable energy is scaling so quickly comes down to 
 library(ggplot2)
 library(readr)
 library(dplyr)
+
+# Import Levelized Cost of Energy dataset
 url <- 'https://raw.githubusercontent.com/ericmkeen/sewanee_esus/master/02_energy_sector/levelized-cost-of-energy.csv'
 econ <- read_csv(url)
 
-econi <- econ %>% filter(country %in% countries)
+# Filter for selected countries
+econi <- econ %>% 
+  filter(country %in% countries)
+
+# Plot cost trends of renewable technologies
 ggplot(econi,
-       aes(x=year,
-           y=cost,
-           color=source))+
-  geom_point()+
-  geom_hline(yintercept=0.05)+
-  geom_hline(yintercept=0.18)+
-  annotate(geom='text',
-           x=1990,y=0.1,
-           size=3,
-           label='Range of fossil fuel 
-           costs')+
-  labs(title='Declining Cost of Renewable Energy Technologies',
-       x='Year',
-       y='Levelized Cost of Energy (USD per kWh)')
+       aes(x = year,
+           y = cost,
+           color = source)) +
+  geom_point() +
+  
+  # Add horizontal reference lines representing fossil fuel cost range
+  geom_hline(yintercept = 0.05) +
+  geom_hline(yintercept = 0.18) +
+  
+  annotate(geom = 'text',
+           x = 1992,
+           y = 0.1,
+           size = 3,
+           label = 'Approximate fossil fuel cost range') +
+  
+  labs(title = "Declining Cost of Renewable Energy Technologies",
+       x = "Year",
+       y = "Levelized Cost of Energy (USD per kWh)")
 ```
 
 That dynamic has changed dramatically. Data on levelized cost of energy shows steep price declines for solar and wind over time. In many regions, renewables are now as cheap as or cheaper than coal and natural gas. This economic shift is a major turning point, making clean energy adoption not just environmentally responsible but financially logical.
@@ -219,17 +283,42 @@ energi <- energy %>%
   drop_na(Electricity_stats) %>% 
   filter(Electricity_stats>0) %>% 
   mutate(Electricity_stats=as.numeric(Electricity_stats)) %>% 
+  
+  # Compute average electricity generation by technology
   group_by(Country,Technology) %>% 
   summarise(Electricity_stats=mean(Electricity_stats)) %>% 
+  
+  # Focus only on renewable vs non-renewable
   filter(Technology %in% c('Total renewable', 'Total non-renewable')) %>% 
+  
+  # Convert to wide format for percentage calculation
   pivot_wider(names_from=Technology,
                values_from=Electricity_stats)%>% 
+  
+  # Calculate renewable share of total electricity generation
   mutate(Renewable_Percentage=(`Total renewable`/(`Total non-renewable`+`Total renewable`)*100))
 
+# Display summary table using Kable for more a more beautiful tone
 energi %>% kable(caption='Average Electricity Generation by Energy Source')
 ```
 
 So the race between carbon and clean energy is still ongoing. Renewables are scaling fast and costs are falling, but the transition is not happening evenly or quickly enough yet. How this balance shifts in the coming decades will shape the future of sustainable development worldwide. 
+
+**Carbon, the villain, needs to lose to Clean Energy for humanity to survive.**
+
+# How does this relate to Sustainable Development Goals? {#SDGs}
+
+This data story connects directly to global development priorities outlined by the United Nations.
+
+**SDG 7: Affordable and Clean Energy**
+The rapid growth of renewable energy highlights progress toward making clean, reliable, and sustainable energy more accessible worldwide.
+
+**SDG 13: Climate Action**
+Rising carbon emissions and their environmental consequences underscore the urgency of reducing greenhouse gases and transitioning to low-carbon energy systems.
+
+Together, these goals frame the transition from fossil fuels to renewables not just as an economic shift, but as a global necessity.
+
+The race between carbon and clean energy is ultimately a race to meet these goals—and determine the future of life on this planet.
 
 # Takeaways {#takeaways}
 
@@ -246,4 +335,4 @@ So the race between carbon and clean energy is still ongoing. Renewables are sca
 
 3. [Our World in Data](https://raw.githubusercontent.com/ericmkeen/sewanee_esus/master/02_energy_sector/levelized-cost-of-energy.csv) — Supplies levelized cost of energy datasets comparing renewable and fossil fuel economics.
 
-4. Gapminder(Library in R) — Provides socioeconomic indicators such as GDP per capita for global development analysis.
+4. [Gapminder(Library in R)](https://cran.r-project.org/web/packages/gapminder/index.html) — Provides socioeconomic indicators such as GDP per capita for global development analysis.
